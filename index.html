@@ -1,1 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera</title>
+  <!-- Favicon, using user's provided camera icon (image1) -->
+  <link rel="icon" type="image/png" href="camera-favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts for Roboto font style like ChromeOS UI -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #2196f3;
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    .camera-app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-direction: column;
+    }
+    .top-bar {
+      width: 100vw;
+      height: 54px;
+      background: rgba(22, 82, 160, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+    }
+    .top-bar .settings-btn {
+      width: 42px;
+      height: 42px;
+      margin-right: 12px;
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.18s;
+    }
+    .top-bar .settings-btn:hover {
+      background: rgba(255,255,255,0.17);
+    }
+    .camera-preview-container {
+      background: #1e88e5;
+      border-radius: 28px;
+      box-shadow: 0 6px 38px 6px rgba(20, 54, 84, 0.33);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      position: relative;
+      margin-top: 54px;
+      width: 660px;
+      height: 482px;
+      overflow: hidden;
+    }
+    .camera-preview {
+      border-radius: 20px;
+      background: #111;
+      object-fit: cover;
+      width: 600px;
+      height: 400px;
+      box-shadow: 0 2px 18px 7px rgba(0,0,0,0.06);
+      margin: 34px 0 0 0;
+    }
+    /* Bottom bar */
+    .bottom-bar {
+      width: 660px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      bottom: -48px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+    .shutter-btn {
+      background: #fff;
+      border: 5px solid #90caf9;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      margin: 0 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border .12s;
+      box-shadow: 0 2px 8px 3px rgba(13,46,98,0.17);
+      position: relative;
+    }
+    .shutter-btn:active {
+      border: 6px solid #1976d2;
+    }
+    .switch-btn, .gallery-btn {
+      background: rgba(255,255,255,0.96);
+      border: none;
+      outline: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 15px;
+      cursor: pointer;
+      transition: background .15s;
+      box-shadow: 0 1.5px 5px 2px rgba(18,44,77,0.13);
+    }
+    .switch-btn:hover, .gallery-btn:hover {
+      background: #e3f2fd;
+    }
+    /* Media Gallery (hidden, shows on click) */
+    .gallery-preview {
+      position: fixed;
+      top: 80px;
+      right: 30px;
+      width: 120px;
+      height: 100px;
+      z-index: 10;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px 4px rgba(28,70,110, 0.19);
+      display: none;
+      overflow: hidden;
+      padding: 8px;
+      flex-direction: column;
+      gap: 7px;
+      align-items: center;
+      user-select: text;
+    }
+    .gallery-preview img {
+      width: 104px;
+      height: auto;
+      border-radius: 7px;
+      object-fit: cover;
+    }
+    /* Custom camera SVG buttons, mimicking ChromeOS style */
+    .icon {
+      display: inline-block;
+      vertical-align: middle;
+      width: 26px;
+      height: 26px;
+      fill: #3b5167;
+    }
+    @media (max-width: 700px) {
+      .camera-preview-container, .bottom-bar {
+        width: 98vw;
+      }
+      .camera-preview {
+        width: 94vw;
+        height: 48vw;
+        max-width: 99vw;
+      }
+      .bottom-bar {
+        left: 1vw !important;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="camera-app">
+    <!-- Top App Bar -->
+    <div class="top-bar">
+      <button class="settings-btn" title="Settings">
+        <!-- settings SVG -->
+        <svg class="icon" viewBox="0 0 24 24">
+          <path d="M12 8.4A3.6 3.6 0 1 0 12 15.6 3.6 3.6 0 0 0 12 8.4zm8.94 4.24l-1.06-.31c-.09-.31-.2-.6-.32-.89l.69-1.02a1 1 0 0 0-.17-1.28l-1.32-1.32a1 1 0 0 0-1.28-.17l-1.02.69c-.29-.13-.58-.23-.89-.32l-.31-1.06A1 1 0 0 0 13.01 4h-2.02a1 1 0 0 0-.98.76l-.31 1.06c-.31.09-.6.2-.89.32l-1.02-.69a1 1 0 0 0-1.28.17l-1.32 1.32a1 1 0 0 0-.17 1.28l.69 1.02c-.13.29-.23.58-.32.89l-1.06.31A1 1 0 0 0 4 10.99v2.02c0 .46.31.87.76.98l1.06.31c.09.31.2.6.32.89l-.69 1.02a1 1 0 0 0 .17 1.28l1.32 1.32a1 1 0 0 0 1.28.17l1.02-.69c.29.13.58.23.89.32l.31 1.06A1 1 0 0 0 10.99 20h2.02c.46 0 .87-.32.98-.76l.31-1.06c.31-.09.6-.2.89-.32l1.02.69a1 1 0 0 0 1.28-.17l1.32-1.32a1 1 0 0 0 .17-1.28l-.69-1.02c.13-.29.23-.58.32-.89l1.06-.31c.45-.11.76-.52.76-.98v-2.02a1 1 0 0 0-.76-.98z"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Camera preview -->
+    <div class="camera-preview-container">
+      <video class="camera-preview" id="camera" autoplay playsinline></video>
+      <!-- Overlays can go here -->
+      <!-- Bottom bar for controls -->
+      <div class="bottom-bar">
+        <button class="switch-btn" id="switchBtn" title="Switch camera">
+              <!-- Flip camera SVG -->
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M16.65 14.86l-2.79-2.8a.5.5 0 0 0-.85.35v2c-3.03 0-5.5-2.47-5.5-5.5 0-.85.17-1.65.46-2.36a.496.496 0 1 0-.92-.38A6.975 6.975 0 0 0 4 12.5c0 3.87 3.13 7 7 7v2c0 .45.54.67.85.35l2.79-2.8c.2-.2.2-.51 0-.71zM12 4.5c1.61 0 3.09.59 4.23 1.57l-1.68 1.69A.5.5 0 0 0 15 8.5h5c.28 0 .5-.22.5-.5v-5a.5.5 0 0 0-.86-.35l-1.65 1.65A7.956 7.956 0 0 0 12 2.5c-1.25 0-2.44.24-3.54.68a.5.5 0 0 0 .38.92c.71-.29 1.51-.45 2.36-.45z"/>
+              </svg>
+        </button>
+        <button class="shutter-btn" id="shutterBtn" title="Take photo"></button>
+        <button class="gallery-btn" id="galleryBtn" title="Show gallery">
+          <!-- Gallery SVG -->
+          <svg class="icon" viewBox="0 0 24 24">
+            <path d="M21 19V5a2 2 0 0 0-2-2H5A2 2 0 0 0 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zm-2 0H5V5h14v14zm-7-4l2.5 3.01h-7l3.5-4.51 2.5 3.01z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Gallery popover -->
+    <div class="gallery-preview" id="galleryPreview"></div>
+  </div>
+  <script>
+    // Camera logic
+    const video = document.getElementById('camera');
+    const shutter = document.getElementById('shutterBtn');
+    let currentStream;
+    let capturedImages = [];
 
+    // Setup camera
+    async function startCamera(facingMode = "user") {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const constraints = {
+          video: {
+            facingMode: facingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        currentStream = stream;
+      } catch (e) {
+        alert('Could not access the camera.\n' + e);
+      }
+    }
+
+    // Default: selfie mode (user-facing)
+    let cameraFacing = "user";
+    startCamera(cameraFacing);
+
+    // Support for switching cameras
+    document.getElementById('switchBtn').onclick = async () => {
+      cameraFacing = (cameraFacing === "user" ? "environment" : "user");
+      await startCamera(cameraFacing);
+    };
+
+    // Take photo
+    shutter.onclick = function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 600;
+      canvas.height = video.videoHeight || 400;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataURL = canvas.toDataURL('image/png');
+      capturedImages.unshift(dataURL);
+      flashEffect();
+      // Optional: play shutter sound if available
+    };
+
+    // Gallery preview logic
+    const galleryBtn = document.getElementById('galleryBtn');
+    const galleryPreview = document.getElementById('galleryPreview');
+
+    galleryBtn.onclick = function () {
+      updateGallery();
+      galleryPreview.style.display = galleryPreview.style.display === "none" || !galleryPreview.style.display
+        ? "flex" : "none";
+    };
+
+    function updateGallery() {
+      if (!capturedImages.length) {
+        galleryPreview.innerHTML = '<span style="color:#607d8b;">No photos yet</span>';
+        return;
+      }
+      galleryPreview.innerHTML = '';
+      capturedImages.slice(0, 3).forEach((src, idx) => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.title = "Photo " + (capturedImages.length - idx);
+        galleryPreview.appendChild(img);
+      });
+    }
+
+    // Minimal flash effect when photo is taken
+    function flashEffect() {
+      let flasher = document.createElement('div');
+      flasher.style.position = "fixed";
+      flasher.style.left = "0";
+      flasher.style.top = "0";
+      flasher.style.width = "100vw";
+      flasher.style.height = "100vh";
+      flasher.style.background = "#fff";
+      flasher.style.opacity = "0.7";
+      flasher.style.zIndex = "99999";
+      flasher.style.transition = "opacity 130ms";
+      document.body.appendChild(flasher);
+      setTimeout(() => {
+        flasher.style.opacity = "0";
+        setTimeout(() => document.body.removeChild(flasher), 130);
+      }, 70);
+    }
+
+    // Hide gallery on outside click
+    document.body.addEventListener('mousedown', (e) => {
+      if (!galleryPreview.contains(e.target) && e.target !== galleryBtn) {
+        galleryPreview.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
